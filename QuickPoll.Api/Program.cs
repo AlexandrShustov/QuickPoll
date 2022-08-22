@@ -8,10 +8,14 @@ using QuickPoll.Application;
 using QuickPoll.Application.Entities;
 using QuickPoll.Application.Interfaces;
 using QuickPoll.Application.Models;
-using QuickPoll.Application.Polls.Commands;
+using QuickPoll.Application.Polls.Commands.CreatePoll;
+using QuickPoll.Application.Polls.Commands.RespondToPoll;
 using QuickPoll.Application.Polls.Queries;
+using QuickPoll.Application.Polls.Queries.GetPoll;
+using QuickPoll.Application.Polls.Queries.GetResponds;
 using QuickPoll.Domain;
 using QuickPoll.Infrastructure;
+using NotFoundResult = QuickPoll.Application.Entities.NotFoundResult;
 using OkResult = QuickPoll.Application.Entities.OkResult;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -76,7 +80,7 @@ app.MapPost("/poll",
   async (ISender sender, [FromBody] CreatePollCommand cmd) =>
     await sender.Send(cmd) switch
     {
-      OkResult<object> x => Results.Ok(x.Value),
+      OkResult<string> x => Results.Created($"poll/{x.Value}", x.Value),
     });
 
 app.MapGet("/poll/{id}",
@@ -84,14 +88,16 @@ app.MapGet("/poll/{id}",
     await sender.Send(new GetPollQuery { PollId = id }) switch
     {
       OkResult<PollModel> x => Results.Ok(x.Value),
-      NotFoundResult<string> x => Results.NotFound(x)
+      NotFoundResult<string> x => Results.NotFound(x),
+      ErrorResult x => Results.BadRequest(x.Message),
     });
 
 app.MapPost("/poll/respond",
   async (RespondCommand command, ISender sender) =>
     await sender.Send(command) switch
     {
-      InvalidOptionResult x => Results.Problem(x.Message, statusCode: (int)HttpStatusCode.BadRequest),
+      NotFoundResult x => Results.Problem(x.Message, statusCode: (int)HttpStatusCode.NotFound),
+      ErrorResult x => Results.Problem(x.Message, statusCode: (int)HttpStatusCode.BadRequest),
       OkResult => Results.Ok()
     });
 
@@ -100,7 +106,8 @@ app.MapGet("/poll/{id}/responds",
     await sender.Send(new GetRespondsQuery() { PollId = id }) switch
     {
       OkResult<RespondsModel> x => Results.Ok(x.Value),
-      NotFoundResult<long> x => Results.NotFound(x.Value)
+      NotFoundResult => Results.NotFound(),
+      ErrorResult x => Results.BadRequest(x.Message)
     });
 
 app.Run();

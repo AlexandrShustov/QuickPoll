@@ -3,5 +3,5 @@
 public interface IObfuscationService
 {
   Task<string> Obfuscate(long id);
-  Task<long> DeObfuscate(string id);
+  Task<(bool Success, long Result)> TryDeObfuscate(string id);
 }

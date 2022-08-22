@@ -15,6 +15,9 @@ public class ObfuscationService : IObfuscationService
   public Task<string> Obfuscate(long id) => 
     Task.FromResult(_hasher.EncodeLong(id));
 
-  public Task<long> DeObfuscate(string id) => 
-    Task.FromResult(_hasher.DecodeSingleLong(id));
+  public Task<(bool Success, long Result)> TryDeObfuscate(string id)
+  {
+    var success = _hasher.TryDecodeSingleLong(id, out var decodedId);
+    return Task.FromResult((success, decodedId));
+  }
 }

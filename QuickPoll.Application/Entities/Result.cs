@@ -25,6 +25,12 @@ public class OkResult<T> : OkResult, IResult<T>
 public class ErrorResult : IResult
 {
   public string Message { get; set; }
+
+  public ErrorResult WithMessage(string message)
+  {
+    Message = message;
+    return this;
+  }
 }
 
 public class ErrorResult<T> : ErrorResult, IResult<T>
@@ -34,5 +40,22 @@ public class ErrorResult<T> : ErrorResult, IResult<T>
   public ErrorResult(T value)
   {
     Value = value;
+  }
+
+  public new ErrorResult<T> WithMessage(string message)
+  {
+    base.WithMessage(message);
+    return this;
+  }
+}
+
+public class NotFoundResult : ErrorResult
+{ }
+
+public class NotFoundResult<T> : ErrorResult<T>
+{
+  public NotFoundResult(T value) : base(value)
+  {
+    Message = "The queried entity wasn't found.";
   }
 }

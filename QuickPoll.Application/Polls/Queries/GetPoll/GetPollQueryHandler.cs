@@ -5,12 +5,7 @@ using QuickPoll.Application.Entities;
 using QuickPoll.Application.Interfaces;
 using QuickPoll.Application.Models;
 
-namespace QuickPoll.Application.Polls.Queries;
-
-public class GetPollQuery : IRequest<IResult>
-{
-  public string PollId { get; set; }
-}
+namespace QuickPoll.Application.Polls.Queries.GetPoll;
 
 public class GetPollQueryHandler : IRequestHandler<GetPollQuery, IResult>
 {
@@ -27,13 +22,15 @@ public class GetPollQueryHandler : IRequestHandler<GetPollQuery, IResult>
 
   public async Task<IResult> Handle(GetPollQuery request, CancellationToken cancellationToken)
   {
-    var id = await _obfuscationService.DeObfuscate(request.PollId);
+    var (success, id) = await _obfuscationService.TryDeObfuscate(request.PollId);
+    if (!success)
+      return new ErrorResult().WithMessage("Invalid id.");
 
     var poll = await _dbContext
       .Polls
       .Include(x => x.Options)
       .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
-    
+
     return poll is not null
       ? new OkResult<PollModel>(_mapper.From(poll).AdaptToType<PollModel>())
       : new NotFoundResult<string>(request.PollId);

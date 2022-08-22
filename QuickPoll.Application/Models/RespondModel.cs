@@ -15,6 +15,9 @@ public class RespondModel : BaseModel<RespondModel, Respond>
   {
     Rules().Ignore(d => d.PollId)
       .AfterMapping(async (s, d) =>
-        d.PollId = await MapContext.Current.GetService<IObfuscationService>().DeObfuscate(s.PollId));
+      {
+        var (_, id) = await MapContext.Current.GetService<IObfuscationService>().TryDeObfuscate(s.PollId);
+        d.PollId = id;
+      });
   }
 }
